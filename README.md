@@ -66,3 +66,41 @@ pip install -r requirements.txt
 Manually download and install Moses and other dependencies (you'll need to look inside scripts/download_install_packages.sh to replicate its steps).
 
 Run the training logic by manually executing the code inside train.sh, or porting it to a Python script or notebook.
+
+# Comparison beyween Pre-norm and Post-norm
+
+To investigate the effect of layer normalization placement, two additional models were trained alongside the baseline: one using pre-norm and one using post-norm.
+
+**Changes to `./scripts/train.sh`:**
+
+The training script was modified to adapt to the CPU cores of own devices
+`num_threads=8`
+and loop over both model configurations sequentially.
+```
+for model_name in deen_transformer_prenorm deen_transformer_postnorm; do
+
+    mkdir -p $logs/$model_name
+
+    OMP_NUM_THREADS=$num_threads python -m joeynmt train $configs/$model_name.yaml > $logs/$model_name/out 2> $logs/$model_name/err
+```
+
+**New config files:**
+
+Two new config files were created based on the baseline configuration.
+`configs/deen_transformer_prenorm.yaml` and `configs/deen_transformer_postnorm.yaml` changed model names and added layer_norm in both encoder and decoder. 
+Example:
+```
+name: "deen_transformer_prenorm"
+
+training:
+    model_dir: "models/deen_transformer_prenorm"
+
+model:
+    encoder:
+        type: "transformer"
+        layer_norm: "pre"
+    decoder:
+        type: "transformer"
+        layer_norm: "pre"
+```
+All other hyperparameters are identical across all three models to ensure a fair comparison.
